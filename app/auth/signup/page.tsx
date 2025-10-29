@@ -2,11 +2,13 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 // import { useToast } from "@/hooks/use-toast"
 import { toast } from "sonner"
+import { supabase } from "@/lib/supabaseClient"
+import { useCurrentUser } from "@/hooks/useAuth"
 
 export default function SignupPage() {
   const router = useRouter()
@@ -15,6 +17,13 @@ export default function SignupPage() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const { data } = useCurrentUser()
+
+  useEffect(() => {
+    if (data?.user) {
+      router.push("/")
+    }
+  }, [data, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,23 +40,21 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
       })
 
-      if (response.ok) {
-        toast("Success", { description: "Account created successfully" })
-        router.push("/gallery")
-      } else {
-        const error = await response.json()
+      if (error) {
         toast("Error",
           {
             description: error.message || "Signup failed",
             //  variant: "destructive" 
           })
       }
+
+      router.push("/")
+
     } catch (error) {
       toast("Error",
         {

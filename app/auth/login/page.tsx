@@ -2,43 +2,58 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
+import { supabase } from "@/lib/supabaseClient"
+import { useCurrentUser } from "@/hooks/useAuth"
+
+
 
 export default function LoginPage() {
   const router = useRouter()
-//   const { toast } = useToast()
+  //   const { toast } = useToast()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+
+  const {data} = useCurrentUser()
+
+  useEffect(() => {
+    if(data?.user) {
+      router.push("/")
+    }
+  }, [data, router])
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       })
 
-      if (response.ok) {
-        toast( "Success", {description: "Logged in successfully"})
-        router.push("/gallery")
-      } else {
-        const error = await response.json()
-        toast("Error", 
-            { description: error.message || "Login failed", 
+      if (error) {
+        console.error("Login failed:", error.message)
+        toast("Error",
+          {
+            description: error.message || "Login failed",
             // variant: "destructive" 
-        })
+          })
+        return
       }
+
+      // console.log("User logged in:", data.user)
+      router.push("/")
     } catch (error) {
-      toast( "Error", 
-        { description: "An error occurred", 
-            // variant: "destructive" 
+      toast("Error",
+        {
+          description: "An error occurred",
+          // variant: "destructive" 
         })
     } finally {
       setIsLoading(false)

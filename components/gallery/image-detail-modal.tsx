@@ -25,7 +25,12 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative w-full aspect-video">
-          <NextImage src={image.url || "/placeholder.svg"} alt={image.title} fill className="object-cover" />
+          <NextImage 
+          src={image.original_url} 
+          alt={image.filename} 
+          fill 
+          className="object-cover" 
+          />
           <button
             onClick={onClose}
             className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
@@ -37,13 +42,13 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
         </div>
 
         <div className="p-6">
-          <h2 className="text-2xl font-bold text-foreground mb-2">{image.title}</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-2">{image.filename}</h2>
           <p className="text-muted-foreground mb-4">{image.description}</p>
 
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-foreground mb-2">Tags</h3>
             <div className="flex flex-wrap gap-2">
-              {image.tags.map((tag) => (
+              {image.image_metadata.tags.map((tag) => (
                 <span key={tag} className="bg-primary/20 text-primary px-3 py-1 rounded-full text-sm">
                   {tag}
                 </span>

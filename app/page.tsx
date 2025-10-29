@@ -1,103 +1,60 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import GalleryGrid from "@/components/gallery/gallery-grid"
 import SearchBar from "@/components/gallery/search-bar"
 import ColorFilter from "@/components/gallery/color-filter"
 import UploadModal from "@/components/gallery/upload-modal"
 import { toast } from "sonner"
-
-interface Image {
-  id: string
-  url: string
-  title: string
-  description: string
-  tags: string[]
-  uploadDate: string
-  color?: string
-}
+import { useCurrentUser } from "@/hooks/useAuth"
+import { supabase } from "@/lib/supabaseClient"
+import { useSignedImages } from "@/hooks/useSignedImages"
 
 export default function GalleryPage() {
   const router = useRouter()
-  const [images, setImages] = useState<Image[]>([])
-  const [filteredImages, setFilteredImages] = useState<Image[]>([])
+  const { data, error } = useCurrentUser()
+
+  const [showUploadModal, setShowUploadModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedColor, setSelectedColor] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [page, setPage] = useState(1)
 
-  // useEffect(() => {
-  //   const checkAuth = async () => {
-  //     try {
-  //       const response = await fetch("/api/auth/check")
-  //       if (!response.ok) {
-  //         router.push("/auth/login")
-  //       } else {
-  //         loadImages()
-  //       }
-  //     } catch (error) {
-  //       router.push("/auth/login")
-  //     }
-  //   }
+  // ✅ now using your new hook
+  const {
+    images,
+    loading: imagesLoading,
+    error: imagesError,
+  } = useSignedImages(searchQuery, selectedColor, page)
 
-  //   checkAuth()
-  // }, [router])
-
-  const loadImages = async () => {
-    try {
-      const response = await fetch("/api/images")
-      if (response.ok) {
-        const data = await response.json()
-        setImages(data)
-        setFilteredImages(data)
-      }
-    } catch (error) {
-      toast("Error", {
-        description: "Failed to load images",
-        // variant: "destructive" 
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
+  // 🚪 Redirect unauthenticated users
   useEffect(() => {
-    let filtered = images
-
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (img) =>
-          img.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          img.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          img.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())),
-      )
+    if (error && !data?.user) {
+      router.push("/auth/login")
     }
+  }, [error, data, router])
 
-    if (selectedColor) {
-      filtered = filtered.filter((img) => img.color === selectedColor)
-    }
-
-    setFilteredImages(filtered)
-  }, [searchQuery, selectedColor, images])
-
-  const handleUploadSuccess = () => {
+  // 🧩 Upload success reloads images
+  const handleUploadSuccess = useCallback(() => {
     setShowUploadModal(false)
-    // loadImages()
     toast("Success", { description: "Image uploaded successfully" })
-  }
+  }, [])
 
-  const handleLogout = async () => {
+  // 🚪 Logout
+  const handleLogout = useCallback(async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" })
-      router.push("/")
-    } catch (error) {
-      toast("Error", {
-        description: "Logout failed",
-        // variant: "destructive" 
-      })
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error("Signout error:", error.message)
+        return
+      }
+      router.push("/auth/login")
+    } catch (err) {
+      toast("Error", { description: "Logout failed" })
     }
-  }
+  }, [router])
+
+  const hasNoImages = !imagesLoading && images.length === 0
 
   return (
     <main className="min-h-screen bg-background">
@@ -124,18 +81,18 @@ export default function GalleryPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Search and Filter */}
+        {/* Search + Filter */}
         <div className="mb-8 space-y-4">
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
           <ColorFilter selectedColor={selectedColor} onColorChange={setSelectedColor} />
         </div>
 
-        {/* Gallery Grid */}
-        {isLoading ? (
+        {/* Gallery */}
+        {imagesLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-pulse text-muted-foreground">Loading images...</div>
           </div>
-        ) : filteredImages.length === 0 ? (
+        ) : hasNoImages ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-4">No images found</p>
             <button
@@ -146,12 +103,14 @@ export default function GalleryPage() {
             </button>
           </div>
         ) : (
-          <GalleryGrid images={filteredImages} />
+          <GalleryGrid images={images} />
         )}
       </div>
 
       {/* Upload Modal */}
-      {showUploadModal && <UploadModal onClose={() => setShowUploadModal(false)} onSuccess={handleUploadSuccess} />}
+      {showUploadModal && (
+        <UploadModal onClose={() => setShowUploadModal(false)} onSuccess={handleUploadSuccess} />
+      )}
     </main>
   )
 }
