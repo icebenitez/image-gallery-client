@@ -14,7 +14,7 @@ export default function GalleryGrid({ images }: GalleryGridProps) {
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {images.map((image) => (
           <div
             key={image.id}
@@ -23,27 +23,30 @@ export default function GalleryGrid({ images }: GalleryGridProps) {
           >
             <ImageComponent
               src={image.thumbnail_url || image.original_url || "/placeholder.svg"}
-              alt={image.filename}
+              alt={image.metadata.description || "No description yet"}
               fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              className="group-hover:scale-105 transition-transform duration-300"
             />
 
             {/* Overlay on hover */}
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-              <h3 className="text-white font-semibold text-lg mb-1">{image.filename}</h3>
-              <p className="text-white/80 text-sm mb-3 line-clamp-2">{image.description}</p>
-              <div className="flex flex-wrap gap-2">
-                {image.image_metadata.tags.slice(0, 3).map((tag) => (
-                  <span key={tag} className="bg-primary/80 text-primary-foreground text-xs px-2 py-1 rounded">
-                    {tag}
-                  </span>
-                ))}
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+              <p className="text-white/80 text-xs mb-2 line-clamp-1">{image.metadata.description || "No description"}</p>
+              <div className="flex flex-wrap gap-1"></div>
+              <div>
+                {image.metadata.tags && image.metadata.tags.length > 0 ? (
+                  image.metadata.tags.slice(0, 2).map((tag) => (
+                    <span key={tag} className="bg-primary/80 text-primary-foreground text-xs px-2 py-0.5 mr-0.5 rounded">
+                      {tag}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-white/60 text-xs">No tags</span>
+                )}
               </div>
-              <p className="text-white/60 text-xs mt-3">{new Date(image.uploadDate).toLocaleDateString()}</p>
             </div>
           </div>
         ))}
-      </div>
+      </div >
 
       {/* Image Detail Modal */}
       {selectedImage && <ImageDetailModal image={selectedImage} onClose={() => setSelectedImage(null)} />}

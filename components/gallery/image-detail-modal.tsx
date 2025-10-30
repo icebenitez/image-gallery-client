@@ -10,6 +10,7 @@ interface GalleryImage {
   tags: string[]
   uploadDate: string
   color?: string
+  colorSwatches?: string[]
 }
 
 interface ImageDetailModalProps {
@@ -25,11 +26,11 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative w-full aspect-video">
-          <NextImage 
-          src={image.original_url} 
-          alt={image.filename} 
-          fill 
-          className="object-cover" 
+          <NextImage
+            src={image.original_url}
+            alt={image.metadata.description}
+            fill
+            className="object-cover"
           />
           <button
             onClick={onClose}
@@ -42,31 +43,41 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
         </div>
 
         <div className="p-6">
-          <h2 className="text-2xl font-bold text-foreground mb-2">{image.filename}</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-2">{image.metadata.description || "Generating description for this image..."}</h2>
           <p className="text-muted-foreground mb-4">{image.description}</p>
 
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-foreground mb-2">Tags</h3>
-            <div className="flex flex-wrap gap-2">
-              {image.image_metadata.tags.map((tag) => (
-                <span key={tag} className="bg-primary/20 text-primary px-3 py-1 rounded-full text-sm">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-4 border-t border-border">
-            <p className="text-sm text-muted-foreground">
-              Uploaded on {new Date(image.uploadDate).toLocaleDateString()}
-            </p>
-            {image.color && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Color:</span>
-                <div className="w-6 h-6 rounded-full border border-border" style={{ backgroundColor: image.color }} />
+            {image.metadata.tags && image.metadata.tags.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {image.metadata.tags?.map((tag) => (
+                  <span key={tag} className="bg-primary/20 text-primary px-3 py-1 rounded-full text-sm">
+                    {tag}
+                  </span>
+                ))}
               </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Generating tags for this image...</p>
             )}
           </div>
+
+          {image.metadata.colors && image.metadata.colors.length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold text-foreground mb-2">Color Palette</h3>
+              <div className="flex gap-3">
+                {image.metadata.colors.map((hex, index) => (
+                  <div key={index} className="flex flex-col items-center gap-1">
+                    <div
+                      className="w-12 h-12 rounded-lg border border-border shadow-sm"
+                      style={{ backgroundColor: hex }}
+                      title={hex}
+                    />
+                    <span className="text-xs text-muted-foreground font-mono">{hex}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

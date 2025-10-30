@@ -2,13 +2,16 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+
 import GalleryGrid from "@/components/gallery/gallery-grid"
 import SearchBar from "@/components/gallery/search-bar"
 import ColorFilter from "@/components/gallery/color-filter"
 import UploadModal from "@/components/gallery/upload-modal"
-import { toast } from "sonner"
+import GallerySkeleton from "@/components/gallery/skeleton"
+import UserAvatar from "@/components/gallery/user-avatar"
+
 import { useCurrentUser } from "@/hooks/useAuth"
-import { supabase } from "@/lib/supabaseClient"
 import { useSignedImages } from "@/hooks/useSignedImages"
 
 export default function GalleryPage() {
@@ -18,14 +21,16 @@ export default function GalleryPage() {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedColor, setSelectedColor] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
 
   // ✅ now using your new hook
   const {
     images,
     loading: imagesLoading,
     error: imagesError,
-  } = useSignedImages(searchQuery, selectedColor, page)
+    metadata
+  } = useSignedImages(searchQuery, selectedColor, currentPage)
 
   // 🚪 Redirect unauthenticated users
   useEffect(() => {
@@ -40,20 +45,6 @@ export default function GalleryPage() {
     toast("Success", { description: "Image uploaded successfully" })
   }, [])
 
-  // 🚪 Logout
-  const handleLogout = useCallback(async () => {
-    try {
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error("Signout error:", error.message)
-        return
-      }
-      router.push("/auth/login")
-    } catch (err) {
-      toast("Error", { description: "Logout failed" })
-    }
-  }, [router])
-
   const hasNoImages = !imagesLoading && images.length === 0
 
   return (
@@ -62,19 +53,14 @@ export default function GalleryPage() {
       <header className="border-b border-border bg-card">
         <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Image Gallery</h1>
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
             <button
               onClick={() => setShowUploadModal(true)}
               className="bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium hover:opacity-90 transition-opacity"
             >
               Upload Image
             </button>
-            <button
-              onClick={handleLogout}
-              className="bg-secondary text-secondary-foreground px-4 py-2 rounded-md font-medium hover:opacity-90 transition-opacity"
-            >
-              Logout
-            </button>
+            <UserAvatar />
           </div>
         </div>
       </header>
@@ -89,9 +75,7 @@ export default function GalleryPage() {
 
         {/* Gallery */}
         {imagesLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-pulse text-muted-foreground">Loading images...</div>
-          </div>
+          <GallerySkeleton />
         ) : hasNoImages ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-4">No images found</p>
@@ -103,7 +87,44 @@ export default function GalleryPage() {
             </button>
           </div>
         ) : (
-          <GalleryGrid images={images} />
+          <>
+            <GalleryGrid images={images} />
+
+            {metadata.totalPages > 1 && (
+              <div className="mt-12 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-md border border-border text-foreground disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted transition-colors"
+                >
+                  Previous
+                </button>
+
+                <div className="flex gap-1">
+                  {Array.from({ length: metadata.totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-10 h-10 rounded-md font-medium transition-colors ${currentPage === page
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border text-foreground hover:bg-muted"
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 rounded-md border border-border text-foreground disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

@@ -15,11 +15,19 @@ interface GalleryImage {
   color?: string
 }
 
+const ITEMS_PER_PAGE = 4
+
 export function useSignedImages(
   searchQuery?: string,
   selectedColor?: string | null,
   page: number = 1
 ) {
+  const [metadata, setMetadata] = useState({
+    totalPages: 1,
+    nextPage: 2,
+    prevPage: null,
+
+  })
   const [images, setImages] = useState<GalleryImage[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,6 +39,7 @@ export function useSignedImages(
 
   useEffect(() => {
     if (!data?.token) return
+    // console.log('token', data.token)
     const controller = new AbortController()
     const client = createAxiosClient(data.token)
 
@@ -45,15 +54,20 @@ export function useSignedImages(
             q: debouncedQuery || undefined,
             color: debouncedColor || undefined,
             page,
-            limit: 20,
+            limit: ITEMS_PER_PAGE,
             sort: "uploaded_at",
-            order: "desc",
+            // order: "desc",
           },
         })
 
-        console.log('response.data.images', response.data.images)
+        console.log('response.data', response.data)
 
         setImages(response.data.images)
+        setMetadata({
+          totalPages: response.data.total_pages,
+          nextPage: response.data.next_pages,
+          prevPage: response.data.prev_pages,
+        })
       } catch (err: any) {
         if (err.name !== "CanceledError" && err.name !== "AbortError") {
           console.error("[useSignedImages]", err)
@@ -68,5 +82,5 @@ export function useSignedImages(
     return () => controller.abort()
   }, [debouncedQuery, debouncedColor, page, data?.token])
 
-  return { images, loading, error }
+  return { images, metadata, loading, error }
 }

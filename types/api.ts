@@ -5,7 +5,7 @@ export interface ApiImage {
   original_path: string
   thumbnail_path: string
   uploaded_at: string
-  image_metadata: {
+  metadata: {
     description: string
     tags: string[]
     colors: string[]
