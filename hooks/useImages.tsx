@@ -18,14 +18,11 @@ export function useImages(query: GalleryQuery) {
 
     switch (query.mode) {
       case "similar_image":
-        console.log('similar_image')
         return `/images/${query.imageId}/similar/tags?${params}`
       case "similar_color":
-        console.log('similar_color')
         return `/images/color/${encodeURIComponent(query.color || "")}?${params}`
       case "gallery":
       default:
-        console.log('gallery')
         return `/images?${params}`
     }
   }
@@ -48,8 +45,6 @@ export function useImages(query: GalleryQuery) {
       return stillProcessing ? 30000 : 0 // 🔁 poll every 30s until done
     },
   })
-
-  // console.log('data.message', swr.data)
 
   return {
     images: swr.data?.data as Image[] || [],

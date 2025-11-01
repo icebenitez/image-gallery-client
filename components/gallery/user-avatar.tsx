@@ -53,7 +53,7 @@ export default function UserAvatar() {
             }
             router.push("/auth/login")
         } catch (err) {
-            toast("Error", { description: "Logout failed" })
+            toast.error("Logout failed")
         }
     }, [router])
 

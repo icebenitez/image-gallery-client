@@ -213,15 +213,13 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      console.log('file', file.name)
-
       try {
         // uploadToSupabase handles bucket upload + DB insert
         const image = await uploadToSupabase(user.id, token, file);
 
         // Fire and forget AI processing
         processImageAI(image)
-          .then(() => console.log(`AI done for ${image.id}`))
+          // .then(() => console.log(`AI done for ${image.id}`))
           .catch((err) => console.error(`AI error ${image.id}:`, err));
 
         results.push({

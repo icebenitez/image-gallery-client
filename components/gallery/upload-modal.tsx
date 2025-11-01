@@ -61,7 +61,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
   const handleUpload = async () => {
     if (!client) return
     if (files.length === 0) {
-      toast("Error", { description: "Please select at least one image" })
+      toast.error("Please select at least one image")
       return
     }
 
@@ -161,12 +161,12 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
         })
       )
 
-      toast("Success", { description: "All uploads complete" })
-      await mutate() // ✅ Revalidate final gallery state
+      toast.success("All uploads complete")
+      await mutate()
       onSuccess()
       setFiles([])
     } catch (err) {
-      toast("Error", { description: "One or more uploads failed" })
+      toast.error("One or more uploads failed")
     } finally {
       setIsUploading(false)
     }

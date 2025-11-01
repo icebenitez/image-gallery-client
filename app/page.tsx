@@ -17,7 +17,7 @@ export default function GalleryPage() {
 
   const handleUploadSuccess = () => {
     setShowUploadModal(false)
-    toast("Success", { description: "Image uploaded successfully" })
+    toast.success("Image uploaded successfully")
   }
 
   const hasNoImages = !isLoading && images.length === 0
