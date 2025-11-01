@@ -2,8 +2,7 @@
 
 import { useState, useRef } from "react"
 import { toast } from "sonner"
-import { createAxiosClient } from "@/lib/axios"
-import { useCurrentUser } from "@/hooks/useAuth"
+import { useAxiosClient } from "@/hooks/useAxiosClient"
 
 interface UploadModalProps {
   onClose: () => void
@@ -16,13 +15,11 @@ interface UploadFile {
   status: "pending" | "uploading" | "success" | "error"
 }
 
-export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
-  const { data, error } = useCurrentUser()
-  const token = data?.token
-
+export default function UploadModal({ onClose, onSuccess }: UploadModalProps) { 
   const [files, setFiles] = useState<UploadFile[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const client = useAxiosClient()
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -57,20 +54,16 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
   }
 
   const handleUpload = async () => {
-    if (!token) {
-      toast("Error", { description: "You must be logged in to upload." })
-      return
-    }
-
+    if (!client) return;
     if (files.length === 0) {
       toast("Error", { description: "Please select at least one image" })
       return
     }
 
     setIsUploading(true)
-    const client = createAxiosClient(token)
 
     try {
+
       await Promise.all(
         files.map(async (fileItem, index) => {
           setFiles((prev) =>
@@ -81,7 +74,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
           formData.append("images", fileItem.file)
 
           try {
-            const response = await client.post("/api/v1/images", formData, {
+            const response = await client.post("/images", formData, {
               headers: { "Content-Type": "multipart/form-data" },
               onUploadProgress: (event) => {
                 if (event.total) {

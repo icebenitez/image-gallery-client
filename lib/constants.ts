@@ -1,0 +1,1 @@
+export const ERROR_FALLBACK_MESSAGE = 'AI data unavailable'

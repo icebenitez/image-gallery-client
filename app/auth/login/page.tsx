@@ -7,29 +7,28 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabaseClient"
-import { useCurrentUser } from "@/hooks/useAuth"
-
-
+import { useUser } from "@/contexts/auth-context"
+// import { useCurrentUser } from "@/hooks/useAuth"
 
 export default function LoginPage() {
   const router = useRouter()
   //   const { toast } = useToast()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  // const [isLoading, setIsLoading] = useState(false)
 
-  const {data} = useCurrentUser()
+  const { user, isLoading } = useUser()
 
   useEffect(() => {
-    if(data?.user) {
+    if(!isLoading && user) {
       router.push("/")
     }
-  }, [data, router])
+  }, [user, isLoading, router])
   
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
+    // setIsLoading(true)
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -56,7 +55,7 @@ export default function LoginPage() {
           // variant: "destructive" 
         })
     } finally {
-      setIsLoading(false)
+      // setIsLoading(false)
     }
   }
 

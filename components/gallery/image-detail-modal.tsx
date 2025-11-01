@@ -1,24 +1,18 @@
 "use client"
 
+import { ERROR_FALLBACK_MESSAGE } from "@/lib/constants"
 import NextImage from "next/image"
-
-interface GalleryImage {
-  id: string
-  url: string
-  title: string
-  description: string
-  tags: string[]
-  uploadDate: string
-  color?: string
-  colorSwatches?: string[]
-}
+import type { Image } from "@/types/gallery"
+import { useGallery } from "@/contexts/gallery-context"
 
 interface ImageDetailModalProps {
-  image: GalleryImage
+  image: Image
   onClose: () => void
 }
 
 export default function ImageDetailModal({ image, onClose }: ImageDetailModalProps) {
+  const { findSimilarImages } = useGallery()
+
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" onClick={onClose}>
       <div
@@ -27,8 +21,8 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
       >
         <div className="relative w-full aspect-video">
           <NextImage
-            src={image.original_url}
-            alt={image.metadata.description}
+            src={image.originalUrl || ""}
+            alt={image.description}
             fill
             className="object-cover"
           />
@@ -43,41 +37,76 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
         </div>
 
         <div className="p-6">
-          <h2 className="text-2xl font-bold text-foreground mb-2">{image.metadata.description || "Generating description for this image..."}</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Image Details</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-2">{image.description || ERROR_FALLBACK_MESSAGE}</h2>
           <p className="text-muted-foreground mb-4">{image.description}</p>
 
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-foreground mb-2">Tags</h3>
-            {image.metadata.tags && image.metadata.tags.length > 0 ? (
+            {image.tags && image.tags.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {image.metadata.tags?.map((tag) => (
+                {image.tags?.map((tag) => (
                   <span key={tag} className="bg-primary/20 text-primary px-3 py-1 rounded-full text-sm">
                     {tag}
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">Generating tags for this image...</p>
+              <p className="text-sm text-muted-foreground">{ERROR_FALLBACK_MESSAGE}</p>
             )}
           </div>
 
-          {image.metadata.colors && image.metadata.colors.length > 0 && (
-            <div className="mb-4">
+          {image.colors && image.colors.length > 0 && (
+            <div className="mb-4" >
               <h3 className="text-sm font-semibold text-foreground mb-2">Color Palette</h3>
               <div className="flex gap-3">
-                {image.metadata.colors.map((hex, index) => (
-                  <div key={index} className="flex flex-col items-center gap-1">
+                {image.colors.map((hex, index) => (
+                  <button
+                    key={index}
+                    onClick={async () => {
+                      await findSimilarImages("color", image.id, hex)
+                      onClose()
+                    }}
+                    className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity"
+                    title={`Find images with color ${hex}`}
+                  >
                     <div
-                      className="w-12 h-12 rounded-lg border border-border shadow-sm"
+                      className="w-12 h-12 rounded-lg border border-border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                       style={{ backgroundColor: hex }}
                       title={hex}
                     />
                     <span className="text-xs text-muted-foreground font-mono">{hex}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
           )}
+
+          <div className="flex items-center justify-between pt-4 border-t border-border">
+            <p className="text-sm text-muted-foreground">
+              Uploaded on {new Date(image.createdAt).toLocaleDateString()}
+            </p>
+            {image.aiProcessingStatus && (
+              <span
+                className={`text-xs font-medium ${image.aiProcessingStatus === "completed" ? "text-green-600" : "text-amber-600"
+                  }`}
+              >
+                {image.aiProcessingStatus}
+              </span>
+            )}
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-border">
+            <button
+              onClick={async () => {
+                await findSimilarImages("image", image.id)
+                onClose()
+              }}
+              className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium hover:opacity-90 transition-opacity"
+            >
+              Find Similar Images
+            </button>
+          </div>
         </div>
       </div>
     </div>
