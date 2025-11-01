@@ -9,6 +9,7 @@ interface MatchedImage {
   minDistance: number;
   avgDistance: number;
   isMatch: boolean;
+  confidence: number;
 }
 
 interface SignedImage {
@@ -118,7 +119,7 @@ const parseNum = (v: string | null, fallback: number): number =>
 
 export async function GET(
   req: NextRequest,
-  context: { params: { colorCode: string } }
+  context: RouteContext<'/api/images/color/[colorCode]'>
 ) {
   try {
     // 🧩 1️⃣ Auth and params
@@ -186,7 +187,7 @@ export async function GET(
     const matched: MatchedImage[] = metadataList
       .map((meta) => {
         const colorsArr = Array.isArray(meta.colors) ? meta.colors : [];
-        if (!colorsArr.length) return null;
+        if (colorsArr.length === 0) return null;
 
         const distances = colorsArr.map((hex) => {
           try {
@@ -199,17 +200,19 @@ export async function GET(
 
         const minDistance = Math.min(...distances);
         const avgDistance = distances.reduce((a, b) => a + b, 0) / distances.length;
+        const matched = Number.isFinite(minDistance) && minDistance <= THRESHOLD;
 
         return {
           image_id: meta.image_id,
           meta,
           minDistance,
           avgDistance,
-          isMatch: Number.isFinite(minDistance) && minDistance < THRESHOLD,
+          isMatch: matched,
+          confidence: Number((1 - minDistance / 100).toFixed(2)),
         };
       })
       .filter((m): m is MatchedImage => !!m && m.isMatch)
-      .sort((a, b) => a.avgDistance - b.avgDistance);
+      .sort((a, b) => a.minDistance - b.minDistance);
 
     if (!matched.length) {
       return NextResponse.json({

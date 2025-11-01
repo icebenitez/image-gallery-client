@@ -33,7 +33,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
 
 export async function GET(
     req: NextRequest, 
-    context: { params: Promise<{ id: string }> }
+    context: RouteContext<'/api/images/[id]/similar/tags'>
 ) {
     try {
         const { id } = await context.params;
