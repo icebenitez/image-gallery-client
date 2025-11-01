@@ -72,7 +72,7 @@ async function uploadToSupabase(userId, token, file: File) {
   const { error: metaErr } = await supabase.from("image_metadata").insert({
     image_id: imageData.id,
     user_id: userId,
-    ai_processing_status: "processing",
+    ai_processing_status: "pending",
   });
 
   if (metaErr) throw metaErr;
