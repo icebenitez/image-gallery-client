@@ -1,0 +1,10 @@
+{
+  "cron": {
+    "jobs": [
+      {
+        "path": "/api/images/retry",
+        "schedule": "0 */12 * * *"
+      }
+    ]
+  }
+}
