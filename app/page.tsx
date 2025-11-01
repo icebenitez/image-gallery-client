@@ -2,6 +2,7 @@
 
 import { toast } from "sonner"
 import { useGallery } from "@/contexts/gallery-context"
+import { useUser } from "@/contexts/auth-context"
 import { useImages } from "@/hooks/useImages"
 
 import GalleryGrid from "@/components/gallery/gallery-grid"
@@ -10,10 +11,20 @@ import ColorFilter from "@/components/gallery/color-filter"
 import UploadModal from "@/components/gallery/upload-modal"
 import GallerySkeleton from "@/components/gallery/skeleton"
 import UserAvatar from "@/components/gallery/user-avatar"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 export default function GalleryPage() {
   const { query, setQuery, resetFilters, showUploadModal, setShowUploadModal } = useGallery()
   const { images, totalPages, isLoading } = useImages(query)
+  const {user, isLoading: authIsLoading} = useUser()
+  const router = useRouter()
+
+  useEffect(() => {
+    if(!authIsLoading && !user) {
+      router.replace("/auth/login")
+    }
+  }, [authIsLoading, user, router])
 
   const handleUploadSuccess = () => {
     setShowUploadModal(false)
