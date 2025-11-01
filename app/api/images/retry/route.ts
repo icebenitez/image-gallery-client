@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { processImageAI } from "@/lib/ai";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 /**
  * Server-side Supabase client (Service Role key)
@@ -15,7 +15,11 @@ export const supabaseServer = createClient(
   { auth: { persistSession: false } }
 );
 
-export async function PATCH() {
+export async function PATCH(req: NextRequest) {
+  if (req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     // 1️⃣ Fetch all pending images
     const { data: pendingMetas, error } = await supabaseServer
