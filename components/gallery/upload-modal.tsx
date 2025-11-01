@@ -117,7 +117,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
               },
             })
 
-            if (!response.data?.files) throw new Error("Invalid response from server")
+            if (!response.data?.data) throw new Error("Invalid response from server")
 
             setFiles((prev) =>
               prev.map((f, i) =>
@@ -126,7 +126,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
             )
 
             // Finalize SWR cache with uploaded image
-            const uploadedImages: Image[] = response.data.files.map((file: any) => ({
+            const uploadedImages: Image[] = response.data.data.map((file: any) => ({
               id: file.id,
               originalUrl: file.originalUrl,
               thumbnailUrl: file.thumbnailUrl,

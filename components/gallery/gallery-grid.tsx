@@ -30,8 +30,7 @@ export default function GalleryGrid({ images }: GalleryGridProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {images.map((image) => {
           const isProcessing =
-            image.aiProcessingStatus === "pending" ||
-            (!image.thumbnailUrl && !image.originalUrl);
+            !image.originalUrl && !image.thumbnailUrl;
 
           return (
             <div

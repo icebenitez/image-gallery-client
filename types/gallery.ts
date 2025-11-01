@@ -8,7 +8,7 @@ export interface Image {
   colors: string[]; // string of hex codes
 
   // OPTIONALS
-  aiProcessingStatus?: "pending" | "completed" | "error";
+  aiProcessingStatus?: "pending" | "completed" | "error" | "processing";
 
   // similar
   similarityScore?: number;
