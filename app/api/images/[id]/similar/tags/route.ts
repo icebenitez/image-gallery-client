@@ -160,7 +160,7 @@ export async function GET(
                     tags: getMetaField(meta, "tags", []),
                     description: getMetaField(meta, "description", null),
                     colors: getMetaField(meta, "colors", []),
-                    createdAt: getMetaField(meta, "created_at", null),
+                    uploadedAt: getMetaField(meta, "created_at", null),
                     aiProcessingStatus: getMetaField(meta, "ai_processing_status", "pending"),
                     originalUrl: origSignedUrl,
                     thumbnailUrl: thumbSignedUrl,

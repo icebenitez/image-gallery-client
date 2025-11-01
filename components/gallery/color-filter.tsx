@@ -28,31 +28,32 @@ export default function ColorFilter() {
   }
 
   return (
-    <div className="flex items-center gap-3 overflow-x-auto pb-2">
+    <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
       {/* All Button */}
       <button
         onClick={handleReset}
-        className={`px-4 py-2 rounded-full font-medium whitespace-nowrap transition-colors ${
-          query.mode === "gallery"
+        className={`flex-shrink-0 px-4 py-2 rounded-full font-medium whitespace-nowrap transition-colors ${query.mode === "gallery"
             ? "bg-primary text-primary-foreground"
             : "bg-muted text-muted-foreground hover:bg-muted/80"
-        }`}
+          }`}
       >
         All
       </button>
 
       {/* Color Buttons */}
-      {COLORS.map((color) => (
-        <button
-          key={color.value}
-          onClick={() => handleColorSelect(color.value, color.hex)}
-          className={`w-10 h-10 rounded-full transition-transform hover:scale-110 ${
-            query.color === color.hex ? "ring-2 ring-offset-2 ring-foreground" : ""
-          }`}
-          style={{ backgroundColor: color.hex }}
-          title={color.name}
-        />
-      ))}
+      <div className="flex flex-shrink-0 gap-3 sm:gap-4">
+        {COLORS.map((color) => (
+          <button
+            key={color.value}
+            onClick={() => handleColorSelect(color.value, color.hex)}
+            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-transform hover:scale-110 ${query.color === color.hex ? "ring-2 ring-offset-2 ring-foreground" : ""
+              }`}
+            style={{ backgroundColor: color.hex }}
+            title={color.name}
+          />
+        ))}
+      </div>
     </div>
+
   )
 }

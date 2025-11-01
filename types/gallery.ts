@@ -4,7 +4,7 @@ export interface Image {
   thumbnailUrl: string | null;
   description: string;
   tags: string[];
-  uploadDate: string;
+  uploadedAt: string;
   colors: string[]; // string of hex codes
 
   // OPTIONALS
@@ -19,7 +19,6 @@ export interface Image {
     avgDistance: number;
     threshold: number;
   };
-
 }
 
 export interface ImageMetadata {
@@ -27,6 +26,6 @@ export interface ImageMetadata {
   tags: string[];
   description: string | null;
   colors: string[];
-  createdAt: string;
+  uploadedAt: string;
   aiProcessingStatus?: "pending" | "completed" | "error";
 }

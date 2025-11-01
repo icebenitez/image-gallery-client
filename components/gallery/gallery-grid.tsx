@@ -27,11 +27,11 @@ export default function GalleryGrid({ images }: GalleryGridProps) {
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {images.map((image) => {
           const isProcessing =
             image.aiProcessingStatus === "pending" ||
-            (!image.thumbnailUrl && !image.originalUrl)
+            (!image.thumbnailUrl && !image.originalUrl);
 
           return (
             <div
@@ -47,7 +47,8 @@ export default function GalleryGrid({ images }: GalleryGridProps) {
                     src={image.thumbnailUrl || image.originalUrl || "/placeholder.svg"}
                     alt={image.description || ERROR_FALLBACK_MESSAGE}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
                   />
 
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
@@ -55,12 +56,12 @@ export default function GalleryGrid({ images }: GalleryGridProps) {
                       {image.description || ERROR_FALLBACK_MESSAGE}
                     </p>
 
-                    <div>
+                    <div className="flex flex-wrap gap-1">
                       {image.tags?.length ? (
                         image.tags.map((tag) => (
                           <span
                             key={tag}
-                            className="bg-primary/80 text-primary-foreground text-xs px-2 py-0.5 mr-0.5 rounded"
+                            className="bg-primary/80 text-primary-foreground text-[10px] px-2 py-0.5 rounded"
                           >
                             {tag}
                           </span>
@@ -75,9 +76,10 @@ export default function GalleryGrid({ images }: GalleryGridProps) {
                 </>
               )}
             </div>
-          )
+          );
         })}
       </div>
+
 
       {selectedImage && (
         <ImageDetailModal

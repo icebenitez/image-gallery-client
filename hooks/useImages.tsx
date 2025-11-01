@@ -4,6 +4,15 @@ import type { Image } from "@/types/gallery"
 import { ITEMS_PER_PAGE } from "@/lib/constants"
 import { GalleryQuery } from "@/contexts/gallery-context"
 
+interface ImageResponse {
+  data: Image[]
+  metadata?: {
+    totalItems?: number
+    currentPage?: number
+  }
+}
+
+
 export function useImages(query: GalleryQuery) {
   const client = useAxiosClient()
 
@@ -29,12 +38,12 @@ export function useImages(query: GalleryQuery) {
 
   const key = getKey()
 
-  const fetcher = async (url: string) => {
+  const fetcher = async (url: string): Promise<ImageResponse> => {
     const res = await client!.get(url)
     return res.data
   }
 
-  const swr = useSWR(key, fetcher, {
+  const swr = useSWR<ImageResponse>(key, fetcher, {
     revalidateOnFocus: false,
     keepPreviousData: true,
     refreshInterval: (data) => {
@@ -47,7 +56,7 @@ export function useImages(query: GalleryQuery) {
   })
 
   return {
-    images: swr.data?.data as Image[] || [],
+    images: swr.data?.data || [],
     totalItems: swr.data?.metadata?.totalItems ?? 0,
     totalPages: Math.ceil((swr.data?.metadata?.totalItems ?? 0) / ITEMS_PER_PAGE),
     isLoading: swr.isLoading,

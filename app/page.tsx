@@ -31,19 +31,17 @@ export default function GalleryPage() {
   return (
     <main className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Image Gallery</h1>
-          <div className="flex gap-4 items-center">
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium hover:opacity-90 transition-opacity"
-            >
-              Upload Image
-            </button>
+        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-4">
+          {/* Top row: Title + Avatar */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+              Image Gallery
+            </h1>
             <UserAvatar />
           </div>
         </div>
       </header>
+
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {query.mode !== "gallery" && (
@@ -63,8 +61,8 @@ export default function GalleryPage() {
 
         {query.mode === "gallery" && (
           <div className="mb-8 space-y-4">
-            <SearchBar/>
-            <ColorFilter/>
+            <SearchBar />
+            <ColorFilter />
           </div>
         )}
 
@@ -102,8 +100,8 @@ export default function GalleryPage() {
                       key={page}
                       onClick={() => setQuery({ page })}
                       className={`w-10 h-10 rounded-md font-medium transition-colors ${query.page === page
-                          ? "bg-primary text-primary-foreground"
-                          : "border border-border text-foreground hover:bg-muted"
+                        ? "bg-primary text-primary-foreground"
+                        : "border border-border text-foreground hover:bg-muted"
                         }`}
                     >
                       {page}

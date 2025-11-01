@@ -6,7 +6,7 @@ import { processImageAI } from "@/lib/ai";
 import sharp from "sharp";
 import { getMetaField, safeCreateSignedUrl } from "@/lib/helpers";
 
-async function uploadToSupabase(userId, token, file: File) {
+async function uploadToSupabase(userId: string, token: string, file: File) {
   if (!["image/jpeg", "image/png"].includes(file.type)) {
     throw new Error("Unsupported file format. Only JPEG/PNG allowed.");
   }
@@ -145,7 +145,7 @@ export async function GET(req: NextRequest) {
           tags: getMetaField(meta, "tags", []),
           description: getMetaField(meta, "description", null),
           colors: getMetaField(meta, "colors", []),
-          createdAt: getMetaField(meta, "created_at", null),
+          uploadedAt: getMetaField(meta, "created_at", null),
           aiProcessingStatus: getMetaField(meta, "ai_processing_status", "pending"),
           originalUrl: origSignedUrl,
           thumbnailUrl: thumbSignedUrl,
@@ -230,8 +230,9 @@ export async function POST(req: NextRequest) {
         });
       } catch (upErr) {
         console.error("Upload error:", upErr);
+        const message = upErr instanceof Error ? upErr.message : `Upload failed for ${file.name}`
         results.push({
-          error: upErr?.message || `Upload failed for ${file.name}`,
+          error: message,
         });
       }
     }

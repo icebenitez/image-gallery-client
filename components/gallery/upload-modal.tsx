@@ -86,7 +86,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
               thumbnailUrl: "",
               description: "Uploading...",
               tags: [],
-              uploadDate: new Date().toISOString(),
+              uploadedAt: new Date().toISOString(),
               colors: [],
               aiProcessingStatus: "pending",
             }
@@ -132,7 +132,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
               thumbnailUrl: file.thumbnailUrl,
               description: file.description || "",
               tags: file.tags || [],
-              uploadDate: new Date().toISOString(),
+              uploadedAt: new Date().toISOString(),
               colors: file.colors || [],
               aiProcessingStatus: "processing",
             }))
