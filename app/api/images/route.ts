@@ -6,27 +6,31 @@ import { processImageAI } from "@/lib/ai";
 import sharp from "sharp";
 import { getMetaField, safeCreateSignedUrl } from "@/lib/helpers";
 
-async function uploadToSupabase(userId, token, file) {
-  if (!["image/jpeg", "image/png"].includes(file.mimetype)) {
+async function uploadToSupabase(userId, token, file: File) {
+  if (!["image/jpeg", "image/png"].includes(file.type)) {
     throw new Error("Unsupported file format. Only JPEG/PNG allowed.");
   }
 
   const supabase = getUserSupabaseClient(token);
 
   const timestamp = Date.now();
-  const baseName = `${timestamp}_${file.originalname.replace(/\s+/g, "_")}`;
+  const baseName = `${timestamp}_${file.name.replace(/\s+/g, "_")}`;
   const originalPath = `${userId}/originals/${baseName}`;
-  const thumbnailPath = `${userId}/thumbnails/${baseName}.jpg`; // store thumbs as jpg
+  const thumbnailPath = `${userId}/thumbnails/${baseName}.jpg`;
 
-  const thumbnailBuffer = await sharp(file.buffer)
+  // Convert File -> Buffer
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  
+  const thumbnailBuffer = await sharp(buffer)
     .resize(300, 300, { fit: "cover" })
     .toFormat("jpeg")
     .toBuffer();
 
   // Upload original and thumbnail in parallel
   const [origRes, thumbRes] = await Promise.all([
-    supabase.storage.from("images").upload(originalPath, file.buffer, {
-      contentType: file.mimetype,
+    supabase.storage.from("images").upload(originalPath, buffer, {
+      contentType: file.type,
       upsert: false,
     }),
     supabase.storage.from("images").upload(thumbnailPath, thumbnailBuffer, {
@@ -55,7 +59,7 @@ async function uploadToSupabase(userId, token, file) {
     .from("images")
     .insert({
       user_id: userId,
-      filename: file.originalname,
+      filename: file.name,
       original_path: originalPath,
       thumbnail_path: thumbnailPath,
     })
@@ -192,8 +196,12 @@ export async function POST(req: NextRequest) {
     }
 
     // 🔐 Replace with your auth logic or middleware extraction
-    const token = formData.get("token");
-    const userId = formData.get("userId");
+    const verified = await verifyUser(req);
+    if (!verified) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { user, token } = verified;
 
     const results = [];
 
@@ -205,9 +213,11 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
+      console.log('file', file.name)
+
       try {
         // uploadToSupabase handles bucket upload + DB insert
-        const image = await uploadToSupabase(userId, token, file);
+        const image = await uploadToSupabase(user.id, token, file);
 
         // Fire and forget AI processing
         processImageAI(image)

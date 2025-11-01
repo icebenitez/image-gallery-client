@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js"
 import axios from "axios"
 import OpenAI from "openai"
+import getColors from "get-image-colors"
+import sharp from "sharp"
 
 const supabaseServer = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

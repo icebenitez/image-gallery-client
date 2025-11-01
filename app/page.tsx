@@ -63,14 +63,8 @@ export default function GalleryPage() {
 
         {query.mode === "gallery" && (
           <div className="mb-8 space-y-4">
-            <SearchBar
-              value={query.query || ""}
-              onChange={(q) => setQuery({ query: q, page: 1 })}
-            />
-            <ColorFilter
-              selectedColor={query.color}
-              onColorChange={(c) => setQuery({ color: c, mode: "similar_color", page: 1 })}
-            />
+            <SearchBar/>
+            <ColorFilter/>
           </div>
         )}
 
