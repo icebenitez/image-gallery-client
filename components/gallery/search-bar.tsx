@@ -1,18 +1,23 @@
 "use client"
 
-interface SearchBarProps {
-  value: string
-  onChange: (value: string) => void
-}
+import { useGallery } from "@/contexts/gallery-context"
 
-export default function SearchBar({ value, onChange }: SearchBarProps) {
+export default function SearchBar() {
+  const { query, setQuery } = useGallery()
+
   return (
     <div className="relative">
       <input
         type="text"
         placeholder="Search by title, description, or tags..."
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        value={query.query || ""}
+        onChange={(e) =>
+          setQuery({
+            query: e.target.value,
+            mode: "gallery", // ensure we go back to gallery mode when searching
+            page: 1,
+          })
+        }
         className="w-full px-4 py-3 rounded-md border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
       />
       <svg

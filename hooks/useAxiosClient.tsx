@@ -4,7 +4,7 @@ import { useMemo } from "react"
 import axios, { AxiosInstance } from "axios"
 import { useUser } from "@/contexts/auth-context"
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:4000"
+// const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:4000"
 
 /**
  * React hook that returns an authenticated Axios client bound to the current Supabase session token.
@@ -18,7 +18,7 @@ export function useAxiosClient(): AxiosInstance | null {
     if (!token) return null
 
     const instance = axios.create({
-      baseURL: BASE_URL + "/api" + "/v1",
+      baseURL: "/api",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,

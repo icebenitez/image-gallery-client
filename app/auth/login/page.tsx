@@ -1,34 +1,35 @@
 "use client"
 
-import type React from "react"
-
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabaseClient"
 import { useUser } from "@/contexts/auth-context"
-// import { useCurrentUser } from "@/hooks/useAuth"
 
 export default function LoginPage() {
   const router = useRouter()
-  //   const { toast } = useToast()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  // const [isLoading, setIsLoading] = useState(false)
-
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const { user, isLoading } = useUser()
 
+  // ✅ Redirect if already logged in
   useEffect(() => {
-    if(!isLoading && user) {
-      router.push("/")
+    if (!isLoading && user) {
+      router.replace("/")
     }
   }, [user, isLoading, router])
-  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // setIsLoading(true)
+
+    if (!email || !password) {
+      toast.error("Please enter your email and password")
+      return
+    }
+
+    setIsSubmitting(true)
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -38,24 +39,31 @@ export default function LoginPage() {
 
       if (error) {
         console.error("Login failed:", error.message)
-        toast("Error",
-          {
-            description: error.message || "Login failed",
-            // variant: "destructive" 
-          })
+        toast.error(error.message)
         return
       }
 
-      // console.log("User logged in:", data.user)
-      router.push("/")
-    } catch (error) {
-      toast("Error",
-        {
-          description: "An error occurred",
-          // variant: "destructive" 
-        })
+      const user = data?.user
+
+      // ✅ Check if email is confirmed before allowing login
+      if (user && !user.email_confirmed_at) {
+        toast.error(
+          "Please verify your email address before signing in. Check your inbox for the confirmation link."
+        )
+        // Optionally resend confirmation email
+        // await supabase.auth.resend({ type: "signup", email })
+        await supabase.auth.signOut()
+        return
+      }
+
+      toast.success("Signed in successfully!")
+      router.replace("/")
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "An unexpected error occurred"
+      toast.error(message)
     } finally {
-      // setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -69,7 +77,10 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
               Email
             </label>
             <input
@@ -84,7 +95,10 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
               Password
             </label>
             <input
@@ -100,10 +114,10 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isSubmitting}
             className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isSubmitting ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
@@ -112,6 +126,10 @@ export default function LoginPage() {
           <Link href="/auth/signup" className="text-primary hover:underline">
             Sign up
           </Link>
+        </p>
+
+        <p className="text-center text-xs text-muted-foreground mt-4">
+          You must confirm your email before logging in.
         </p>
       </div>
     </main>

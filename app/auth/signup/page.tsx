@@ -1,40 +1,32 @@
 "use client"
 
-import type React from "react"
-
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-// import { useToast } from "@/hooks/use-toast"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabaseClient"
-import { useCurrentUser } from "@/hooks/useAuth"
+import { useUser } from "@/contexts/auth-context"
 
 export default function SignupPage() {
   const router = useRouter()
-  // const { toast } = useToast()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const { data } = useCurrentUser()
+  const { user, isLoading: authLoading } = useUser()
 
+  // ✅ Redirect only if session is already active
   useEffect(() => {
-    if (data?.user) {
-      router.push("/")
+    if (!authLoading && user) {
+      router.replace("/")
     }
-  }, [data, router])
+  }, [user, authLoading, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (password !== confirmPassword) {
-      toast("Error",
-        {
-          description: "Passwords do not match",
-          //  variant: "destructive" 
-        })
-      return
+      return toast.error("Passwords do not match")
     }
 
     setIsLoading(true)
@@ -43,24 +35,33 @@ export default function SignupPage() {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/emailVerification`,
+        },
       })
 
       if (error) {
-        toast("Error",
-          {
-            description: error.message || "Signup failed",
-            //  variant: "destructive" 
-          })
+        return toast.error(error.message)
       }
 
-      router.push("/")
+      // ✅ If no session yet, user must confirm their email first
+      if (data?.user && !data?.session) {
+        toast.success(
+          `A confirmation link has been sent to ${email}. Please verify your email before signing in.`
+        )
+        setEmail("")
+        setPassword("")
+        setConfirmPassword("")
+        return // don’t redirect
+      }
 
-    } catch (error) {
-      toast("Error",
-        {
-          description: "An error occurred",
-          //  variant: "destructive" 
-        })
+      // ✅ If email confirmation disabled, user will have active session
+      toast.success("Account created successfully")
+      router.push("/")
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to create account"
+      toast.error(message)
     } finally {
       setIsLoading(false)
     }
@@ -71,12 +72,17 @@ export default function SignupPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Create Account</h1>
-          <p className="text-muted-foreground">Start managing your images</p>
+          <p className="text-muted-foreground">
+            Start managing your images
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
               Email
             </label>
             <input
@@ -91,7 +97,10 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
               Password
             </label>
             <input
@@ -106,7 +115,10 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-2">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
               Confirm Password
             </label>
             <input
@@ -134,6 +146,10 @@ export default function SignupPage() {
           <Link href="/auth/login" className="text-primary hover:underline">
             Sign in
           </Link>
+        </p>
+
+        <p className="text-center text-xs text-muted-foreground mt-4">
+          You’ll receive a confirmation link via email to activate your account.
         </p>
       </div>
     </main>

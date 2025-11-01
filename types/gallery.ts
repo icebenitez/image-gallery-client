@@ -21,3 +21,12 @@ export interface Image {
   };
 
 }
+
+export interface ImageMetadata {
+  imageId: string;
+  tags: string[];
+  description: string | null;
+  colors: string[];
+  createdAt: string;
+  aiProcessingStatus?: "pending" | "completed" | "error";
+}

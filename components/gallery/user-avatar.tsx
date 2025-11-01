@@ -2,16 +2,14 @@
 
 import { useState, useRef, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { useCurrentUser } from "@/hooks/useAuth"
 import { supabase } from "@/lib/supabaseClient"
 import { toast } from "sonner"
-// import { useToast } from "@/hooks/use-toast"
+import { useUser } from "@/contexts/auth-context"
 
 export default function UserAvatar() {
     const router = useRouter()
-    //   const { toast } = useToast()
     const [showDropdown, setShowDropdown] = useState(false)
-    const { data } = useCurrentUser()
+    const { user } = useUser()
     const [isDarkMode, setIsDarkMode] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -76,7 +74,7 @@ export default function UserAvatar() {
                 onClick={() => setShowDropdown(!showDropdown)}
                 className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold hover:opacity-90 transition-opacity"
             >
-                {getInitials(data?.user?.email)}
+                {getInitials(user?.email || "")}
             </button>
 
             {/* Dropdown Menu */}
@@ -84,8 +82,8 @@ export default function UserAvatar() {
                 <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg z-50">
                     {/* Email Display */}
                     <div className="px-4 py-3 border-b border-border">
-                        <p className="text-sm text-muted-foreground">Signed in as {data?.user?.email}</p>
-                        <p className="text-sm font-medium text-foreground truncate">{data?.user?.email}</p>
+                        <p className="text-sm text-muted-foreground">Signed in as {user?.email}</p>
+                        <p className="text-sm font-medium text-foreground truncate">{user?.email}</p>
                     </div>
 
                     {/* Dark Mode Toggle */}

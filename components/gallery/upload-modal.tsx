@@ -3,6 +3,9 @@
 import { useState, useRef } from "react"
 import { toast } from "sonner"
 import { useAxiosClient } from "@/hooks/useAxiosClient"
+import { useGallery } from "@/contexts/gallery-context"
+import { useImages } from "@/hooks/useImages"
+import type { Image } from "@/types/gallery"
 
 interface UploadModalProps {
   onClose: () => void
@@ -15,11 +18,13 @@ interface UploadFile {
   status: "pending" | "uploading" | "success" | "error"
 }
 
-export default function UploadModal({ onClose, onSuccess }: UploadModalProps) { 
+export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
   const [files, setFiles] = useState<UploadFile[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const client = useAxiosClient()
+  const { query } = useGallery()
+  const { mutate } = useImages(query) // 🔥 SWR hook
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -54,7 +59,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
   }
 
   const handleUpload = async () => {
-    if (!client) return;
+    if (!client) return
     if (files.length === 0) {
       toast("Error", { description: "Please select at least one image" })
       return
@@ -63,7 +68,6 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
     setIsUploading(true)
 
     try {
-
       await Promise.all(
         files.map(async (fileItem, index) => {
           setFiles((prev) =>
@@ -74,6 +78,31 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
           formData.append("images", fileItem.file)
 
           try {
+            // Optimistic UI — create placeholder
+            const tempId = crypto.randomUUID()
+            const optimisticImage: Image = {
+              id: tempId,
+              originalUrl: "",
+              thumbnailUrl: "",
+              description: "Uploading...",
+              tags: [],
+              uploadDate: new Date().toISOString(),
+              colors: [],
+              aiProcessingStatus: "pending",
+            }
+
+            // ⚡ Optimistically add image to cache before upload finishes
+            await mutate(
+              (prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      data: [optimisticImage, ...(prev.data || [])],
+                    }
+                  : { data: [optimisticImage] },
+              { revalidate: false }
+            )
+
             const response = await client.post("/images", formData, {
               headers: { "Content-Type": "multipart/form-data" },
               onUploadProgress: (event) => {
@@ -88,16 +117,41 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
               },
             })
 
-            if (response.status === 200) {
-              setFiles((prev) =>
-                prev.map((f, i) =>
-                  i === index ? { ...f, status: "success", progress: 100 } : f
-                )
+            if (!response.data?.files) throw new Error("Invalid response from server")
+
+            setFiles((prev) =>
+              prev.map((f, i) =>
+                i === index ? { ...f, status: "success", progress: 100 } : f
               )
-            } else {
-              throw new Error("Upload failed")
-            }
+            )
+
+            // Finalize SWR cache with uploaded image
+            const uploadedImages: Image[] = response.data.files.map((file: any) => ({
+              id: file.id,
+              originalUrl: file.originalUrl,
+              thumbnailUrl: file.thumbnailUrl,
+              description: file.description || "",
+              tags: file.tags || [],
+              uploadDate: new Date().toISOString(),
+              colors: file.colors || [],
+              aiProcessingStatus: "processing",
+            }))
+
+            await mutate(
+              (prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      data: [
+                        ...uploadedImages,
+                        ...(prev.data || []).filter((img) => img.id !== tempId),
+                      ],
+                    }
+                  : { data: uploadedImages },
+              { revalidate: false }
+            )
           } catch (err) {
+            console.error("[Upload Error]", err)
             setFiles((prev) =>
               prev.map((f, i) =>
                 i === index ? { ...f, status: "error" } : f
@@ -108,6 +162,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
       )
 
       toast("Success", { description: "All uploads complete" })
+      await mutate() // ✅ Revalidate final gallery state
       onSuccess()
       setFiles([])
     } catch (err) {
@@ -122,7 +177,6 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
       <div className="bg-card rounded-lg max-w-md w-full p-6 shadow-lg">
         <h2 className="text-2xl font-bold text-foreground mb-4">Upload Images</h2>
 
-        {/* Drag & Drop Zone */}
         <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -150,7 +204,6 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
           />
         </div>
 
-        {/* File List */}
         {files.length > 0 && (
           <div className="mb-4 space-y-2 max-h-48 overflow-y-auto">
             {files.map((fileItem, index) => (
@@ -193,7 +246,6 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex gap-3">
           <button
             onClick={onClose}
